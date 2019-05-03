@@ -65,6 +65,7 @@ class Drone {
    * Historial de todos los movimientos del drone
    */
   public function historial() {
+      echo 'a';
     return $this->_historial;
   }
 }
