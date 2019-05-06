@@ -91,10 +91,10 @@ class Stock
   public function lleno()
   { 
       if($this->capacidadMaxima == 0){
-            echo "La capacidad del zoologico esta llena";
+            echo "La capacidad esta llena";
             return true;
         }
-    echo "el zoologico aun tiene disponibilidad para " . $this->capacidadMaxima . " animales" . "\n";
+    echo "Tiene disponibilidad para " . $this->capacidadMaxima . " productos" . "\n";
     return false;    
 
   }
