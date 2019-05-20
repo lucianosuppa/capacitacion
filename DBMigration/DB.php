@@ -31,22 +31,22 @@ class Persona {
 }
 
 class DB {
-  private $db = array();
+  private $data = array();
 
   public function insert($id, $obj) {
-    $this->db[$id] = $obj;
+    $this->data[$id] = $obj;
   }
 
   public function delete($id) {
-
+    // borrar la key $id de data
   }
 
   public function get($id) {
-
+    // devolver data[$id]
   }
 
   public function getAll() {
-    
+    // devolver data
   }
 }
 
@@ -55,27 +55,28 @@ class Cluster {
   private $dbs = array();
   private $cola;
 
-  public function __construct($cantidadDBs, $cola) {
+  public function __construct($cola) {
     $this->cola = $cola;
-    for ($i=0; $i<$cantidadDBs; $i++) {
-      $this->dbs[] = array();
-    }
   }
 
   public function guardar(Persona $persona) {
     $a_donde = $persona->dameDNI() % count($this->dbs);
     $this->dbs[$a_donde][$persona->dameDNI()] = $persona;
+    // no va mas con arreglos, ahora son DB
+    // dbs[donde]->insert(id, usuario)
   }
 
   public function borrar(Persona $persona) {
     $a_donde = $persona->dameDNI() % count($this->dbs);
     unset($this->dbs[$a_donde][$persona->dameDNI()]);
+    // aca no va mas el unset deberia ser
+    // dbs[donde]->delete( id )
   }
 
-  public function agregarDB() {
-    $this->dbs[] = array();
+  public function agregarDB(DB $db) {
+    $this->dbs[] = $db;
     foreach ($this->dbs as $dbKey => $db) {
-      foreach ($db as $keyUsuario => $usuario) {
+      foreach ($db->getAll() as $keyUsuario => $usuario) {
         $a_donde = $usuario->dameDNI() % count($this->dbs);
         if ($a_donde != $dbKey) {
           $this->cola->encolar($usuario);
@@ -88,9 +89,13 @@ class Cluster {
     while(!$this->cola->estaVacia()) {
       $usuario = $this->cola->desencolar();
 
+      // estas cuentas quedan igual que antes
       $viejoLugar = $usuario->dameDNI() % (count($this->dbs)-1);
       $nuevoLugar = $usuario->dameDNI() % count($this->dbs);
 
+      // esto ya no van, deberian ser
+      // db->delete
+      // db->insert
       unset($this->dbs[$viejoLugar][$usuario->dameDNI()]);
       $this->dbs[$nuevoLugar][$usuario->dameDNI()] = $usuario;
     }
@@ -99,21 +104,26 @@ class Cluster {
   public function mostarResumen() {
     foreach ($this->dbs as $dbKey => $db) {
       echo "DB: $dbKey - Cantidad: ".count($db)."\n";
+      //echo "DB: $dbKey - Cantidad: ".count($db->getall())."\n";
     }
   }
 }
 
 
-$db = new Cluster(3, new Cola());
-$db->guardar(new Persona("Pepe", 32));
-$db->guardar(new Persona("Matias", 10));
-$db->guardar(new Persona("Julian", 9));
-$db->guardar(new Persona("Jose", 44));
-$db->guardar(new Persona("Adrian", 55));
-$db->guardar(new Persona("KP", 60));
-$db->guardar(new Persona("Tomy", 70));
+$cluster = new Cluster(3, new Cola());
 
-$db->agregarDB();
-$db->migrar();
+$db = new DB();
+$cluster->agregarDB($db);
+$cluster->migrar();
 
-$db->mostarResumen();
+// no se olviden de agregar DBS antes de agregar personas,
+// si agregan 3 dbs deberia antdar como antes
+$cluster->guardar(new Persona("Pepe", 32));
+$cluster->guardar(new Persona("Matias", 10));
+$cluster->guardar(new Persona("Julian", 9));
+$cluster->guardar(new Persona("Jose", 44));
+$cluster->guardar(new Persona("Adrian", 55));
+$cluster->guardar(new Persona("KP", 60));
+$cluster->guardar(new Persona("Tomy", 70));
+
+$cluster->mostarResumen();
