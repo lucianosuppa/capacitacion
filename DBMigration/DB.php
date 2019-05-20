@@ -38,28 +38,26 @@ class DB {
   }
 
   public function delete($id) {
-
+    unset($this->db[$id]);
   }
 
   public function get($id) {
-
+    return $this->db[id];
   }
 
   public function getAll() {
-    
+    return $this->db;
   }
 }
 
 class Cluster {
 
-  private $dbs = array();
   private $cola;
+  private $db;
 
-  public function __construct($cantidadDBs, $cola) {
+  public function __construct(DB $db, $cola) {
     $this->cola = $cola;
-    for ($i=0; $i<$cantidadDBs; $i++) {
-      $this->dbs[] = array();
-    }
+    $this->db = $db;
   }
 
   public function guardar(Persona $persona) {
