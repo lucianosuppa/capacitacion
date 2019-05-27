@@ -1,0 +1,6 @@
+{
+    "name": "lsuppa/rabbit",
+    "require": {
+        "php-amqplib/php-amqplib": "^2.9"
+    }
+}
