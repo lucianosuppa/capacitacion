@@ -31,49 +31,48 @@ class Persona {
 }
 
 class DB {
-  private $db = array();
+  private $data = array();
 
   public function insert($id, $obj) {
-    $this->db[$id] = $obj;
+    $this->data[$id] = $obj;
   }
 
   public function delete($id) {
-    unset($this->db[$id]);
+    unset($this->data[$id]);
   }
 
   public function get($id) {
-    return $this->db[id];
+    return $this->data[id];
   }
 
   public function getAll() {
-    return $this->db;
+    return $this->data;
   }
 }
 
 class Cluster {
 
   private $cola;
-  private $db;
+  private $dbs=array();
 
-  public function __construct(DB $db, $cola) {
+  public function __construct($cola) {
     $this->cola = $cola;
-    $this->db = $db;
   }
 
   public function guardar(Persona $persona) {
     $a_donde = $persona->dameDNI() % count($this->dbs);
-    $this->dbs[$a_donde][$persona->dameDNI()] = $persona;
+    $this->dbs[$a_donde]->insert($persona->dameDNI(),$persona);
   }
 
   public function borrar(Persona $persona) {
     $a_donde = $persona->dameDNI() % count($this->dbs);
-    unset($this->dbs[$a_donde][$persona->dameDNI()]);
+    $this->dbs[$a_donde]->delete($persona->dameDNI());
   }
 
-  public function agregarDB() {
-    $this->dbs[] = array();
+  public function agregarDB(DB $db) {
+    $this->dbs[] = $db;
     foreach ($this->dbs as $dbKey => $db) {
-      foreach ($db as $keyUsuario => $usuario) {
+      foreach ($db->getAll() as $keyUsuario => $usuario) {
         $a_donde = $usuario->dameDNI() % count($this->dbs);
         if ($a_donde != $dbKey) {
           $this->cola->encolar($usuario);
@@ -83,35 +82,42 @@ class Cluster {
   }
 
   public function migrar() {
+
     while(!$this->cola->estaVacia()) {
+      
       $usuario = $this->cola->desencolar();
 
       $viejoLugar = $usuario->dameDNI() % (count($this->dbs)-1);
       $nuevoLugar = $usuario->dameDNI() % count($this->dbs);
 
-      unset($this->dbs[$viejoLugar][$usuario->dameDNI()]);
-      $this->dbs[$nuevoLugar][$usuario->dameDNI()] = $usuario;
+      $this->dbs[$viejoLugar]->delete($usuario->dameDNI());
+      $this->dbs[$nuevoLugar]->insert($usuario->dameDNI(),$usuario);
     }
   }
 
-  public function mostarResumen() {
+  public function mostrarResumen() {
     foreach ($this->dbs as $dbKey => $db) {
-      echo "DB: $dbKey - Cantidad: ".count($db)."\n";
+      echo "DB: {$dbKey} - Cantidad: " . count($db->getAll()) . "\n";
     }
   }
 }
 
+$cluster = new Cluster(new Cola());
 
-$db = new Cluster(3, new Cola());
-$db->guardar(new Persona("Pepe", 32));
-$db->guardar(new Persona("Matias", 10));
-$db->guardar(new Persona("Julian", 9));
-$db->guardar(new Persona("Jose", 44));
-$db->guardar(new Persona("Adrian", 55));
-$db->guardar(new Persona("KP", 60));
-$db->guardar(new Persona("Tomy", 70));
+$db = new DB();
+$cluster->agregarDB($db);
 
-$db->agregarDB();
-$db->migrar();
+$cluster->guardar(new Persona("Pepe", 32));
+$cluster->guardar(new Persona("Matias", 10));
+$cluster->guardar(new Persona("Julian", 9));
+$cluster->guardar(new Persona("Jose", 44));
+$cluster->guardar(new Persona("Adrian", 55));
+$cluster->guardar(new Persona("KP", 60));
+$cluster->guardar(new Persona("Tomy", 70));
 
-$db->mostarResumen();
+
+$cluster->agregarDB(new DB());
+$cluster->migrar();
+$cluster->agregarDB(new DB());
+$cluster->migrar();
+$cluster->mostrarResumen();
